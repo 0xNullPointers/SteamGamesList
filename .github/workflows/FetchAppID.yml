@@ -1,0 +1,28 @@
+name: Fetch App ID Lists
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 */6 * * *'
+
+permissions:
+  contents: write
+
+jobs:
+  fetch-and-combine:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        
+      - name: Fetch and combine
+        env:
+          URL_1: ${{ secrets.URL_1 }}
+          URL_2: ${{ secrets.URL_2 }}
+          URL_3: ${{ secrets.URL_3 }}
+        run: |
+          curl -s "$URL_1" "$URL_2" "$URL_3" | jq -s 'add' > AppIDList.json
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add AppIDList.json
+          git diff --staged --quiet || git commit -m "Update AppIDList.json"
+          git push
