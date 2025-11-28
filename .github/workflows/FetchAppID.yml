@@ -20,7 +20,7 @@ jobs:
           URL_2: ${{ secrets.URL_2 }}
           URL_3: ${{ secrets.URL_3 }}
         run: |
-          curl -s "$URL_1" "$URL_2" "$URL_3" | jq -c -s 'add' > AppIDList.json
+          curl -s "$URL_1" "$URL_2" "$URL_3" | jq -s 'add' | jq -c . > AppIDList.json
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           git add AppIDList.json
