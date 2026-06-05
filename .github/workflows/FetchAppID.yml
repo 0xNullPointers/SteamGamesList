@@ -1,26 +1,37 @@
 name: Fetch App ID Lists
-
 on:
   workflow_dispatch:
   schedule:
     - cron: '0 */3 * * *'
-
 permissions:
   contents: write
-
 jobs:
   fetch-and-combine:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        
-      - name: Fetch and combine
+
+      - name: Fetch in parallel
         env:
           URL_1: ${{ secrets.URL_1 }}
           URL_2: ${{ secrets.URL_2 }}
           URL_3: ${{ secrets.URL_3 }}
         run: |
-          curl -s "$URL_1" "$URL_2" "$URL_3" | jq -s 'add' | jq -c . > AppIDList.json
+          curl -sf "$URL_1" -o dlc.json &
+          curl -sf "$URL_2" -o games.json &
+          curl -sf "$URL_3" -o software.json &
+          wait
+
+      - name: Combine with type tags
+        run: |
+          jq -sc \
+            '(.[0] | map(. + {type: "dlc"})) +
+             (.[1] | map(. + {type: "game"})) +
+             (.[2] | map(. + {type: "software"}))' \
+            dlc.json games.json software.json > AppIDList.json
+
+      - name: Commit and push
+        run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           git add AppIDList.json
